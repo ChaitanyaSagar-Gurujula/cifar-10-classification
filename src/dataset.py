@@ -67,69 +67,64 @@ def get_cifar_mean_std(data_path, cache_file='cifar10_mean_std.json'):
         return mean, std
 
 def get_cifar_loaders(batch_size=128, is_train_augmentation=True):
-    """Create CIFAR-10 train and test data loaders"""
+    """Create CIFAR-10 train and test data loaders using Albumentations"""
     # Get data directory path
     data_path = get_data_path()
-    
+
     # Retrieve mean and std (either from cache or by computing)
     mean, std = get_cifar_mean_std(data_path)
-    
+
     if is_train_augmentation:
-        # Training transforms with augmentation
-        train_transform = transforms.Compose([
-            transforms.RandomHorizontalFlip(p=0.5),
-            transforms.RandomCrop(32, padding=4),
-            transforms.RandomAffine(
-                degrees=5,
-                translate=(0.05, 0.05),
-                shear=(-5, 5),
-                fill=0
+        # Albumentations training transforms
+        train_transform = A.Compose([
+            A.HorizontalFlip(p=0.1),
+            A.ShiftScaleRotate(shift_limit=0.0625, scale_limit=0.1, rotate_limit=15, p=0.1),
+            A.CoarseDropout(
+               max_holes=1, max_height=16, max_width=16,
+               min_holes=1, min_height=16, min_width=16,
+               fill='random_uniform',  # Correct usage for mean as fill value
+               p=0.1
             ),
-            transforms.RandomPerspective(
-                distortion_scale=0.2,
-                p=0.1,
-                fill=0
-            ),
-            transforms.ToTensor(),
-            transforms.Normalize(mean, std)
+            A.Normalize(mean=mean, std=std),
+            ToTensorV2(),  # Convert to PyTorch tensor
         ])
     else:
-        # Training transforms without augmentation
-        train_transform = transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize(mean, std)
+        # Test transforms (no augmentation needed)
+        train_transform = A.Compose([
+            A.Normalize(mean=mean, std=std),
+            ToTensorV2(),
         ])
-    
-    # Test transforms (no augmentation needed)
-    test_transform = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize(mean, std)
+
+    # Test transforms
+    test_transform = A.Compose([
+        A.Normalize(mean=mean, std=std),
+        ToTensorV2(),
     ])
-    
+
     # Load datasets with respective transforms
-    train_dataset = datasets.CIFAR10(
+    train_dataset = AlbumentationsDataset(
         data_path, train=True, download=True,
         transform=train_transform
     )
-    
-    test_dataset = datasets.CIFAR10(
+
+    test_dataset = AlbumentationsDataset(
         data_path, train=False,
         transform=test_transform
     )
-    
+
     g = torch.Generator()
     g.manual_seed(42)  # Use the same seed as in set_seed()
-    
+
     train_loader = DataLoader(
         train_dataset,
         batch_size=batch_size,
         shuffle=True,
-        num_workers=11,
+        num_workers=2,
         pin_memory=True,
         worker_init_fn=seed_worker,
         generator=g
     )
-    
+
     test_loader = DataLoader(
         test_dataset,
         batch_size=batch_size,
@@ -139,5 +134,17 @@ def get_cifar_loaders(batch_size=128, is_train_augmentation=True):
         worker_init_fn=seed_worker,
         generator=g
     )
-    
+
     return train_loader, test_loader
+
+# Custom dataset class to apply Albumentations
+class AlbumentationsDataset(datasets.CIFAR10):
+    def __init__(self, root, train=True, transform=None, **kwargs):
+        super().__init__(root, train=train, **kwargs)
+        self.albumentations_transform = transform
+
+    def __getitem__(self, index):
+        image, target = super().__getitem__(index)
+        if self.albumentations_transform:
+           image = self.albumentations_transform(image=np.array(image))["image"]
+        return image, target

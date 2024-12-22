@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import random
 import argparse
+from torchsummary import summary
 
 def set_seed(seed=42):
     """Set seeds for reproducibility."""
@@ -17,9 +18,9 @@ def set_seed(seed=42):
     torch.cuda.manual_seed_all(seed)  # for multi-GPU
     np.random.seed(seed)
     random.seed(seed)
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False  # This can slow down training
-    torch.use_deterministic_algorithms(True, warn_only=True) # Enforce deterministic algorithms
+    #torch.backends.cudnn.deterministic = True
+    #torch.backends.cudnn.benchmark = False  # This can slow down training
+    #torch.use_deterministic_algorithms(True, warn_only=True) # Enforce deterministic algorithms
 
 def calculate_accuracy(model, data_loader, device, desc="Accuracy"):
     """
@@ -79,15 +80,15 @@ def train(model, train_loader, test_loader, optimizer, scheduler, device, num_ep
         dict: Training history containing accuracies and losses
     """
     history = {
-        'train_acc': [],
+        #'train_acc': [],
         'test_acc': [],
-        'train_loss': [],
+        #'train_loss': [],
         'test_loss': [],
         'learning_rates': [],
         'best_model_info': {
             'epoch': 0,
-            'train_acc': 0,
-            'train_loss': 0,
+            #'train_acc': 0,
+            #'train_loss': 0,
             'test_acc': 0,
             'test_loss': 0
         },
@@ -142,10 +143,10 @@ def train(model, train_loader, test_loader, optimizer, scheduler, device, num_ep
         
         
         # Calculate final training accuracy for this epoch
-        print("\nCalculating final training accuracy...")
-        train_acc, train_loss, train_correct, train_total = calculate_accuracy(
-            model, train_loader, device, desc=f"Epoch {epoch} Training"
-        )
+        #print("\nCalculating final training accuracy...")
+        #train_acc, train_loss, train_correct, train_total = calculate_accuracy(
+        #    model, train_loader, device, desc=f"Epoch {epoch} Training"
+        #)
         
         # Calculate test accuracy
         print("\nCalculating test accuracy...")
@@ -154,14 +155,14 @@ def train(model, train_loader, test_loader, optimizer, scheduler, device, num_ep
         )
         
         # Save metrics
-        history['train_acc'].append(train_acc)
+        #history['train_acc'].append(train_acc)
         history['test_acc'].append(test_acc)
-        history['train_loss'].append(train_loss)
+        #history['train_loss'].append(train_loss)
         history['test_loss'].append(test_loss)
         
         # Print epoch summary
         print(f"\nEpoch {epoch} Summary:")
-        print(f"Training - Accuracy: {train_acc:.2f}%, Loss: {train_loss:.4f}")
+       # print(f"Training - Accuracy: {train_acc:.2f}%, Loss: {train_loss:.4f}")
         print(f"Testing  - Accuracy: {test_acc:.2f}%, Loss: {test_loss:.4f}")
         
         # Save best model and its details
@@ -173,8 +174,8 @@ def train(model, train_loader, test_loader, optimizer, scheduler, device, num_ep
             # Store best model information
             history['best_model_info'] = {
                 'epoch': epoch,
-                'train_acc': train_acc,
-                'train_loss': train_loss,
+               # 'train_acc': train_acc,
+               # 'train_loss': train_loss,
                 'test_acc': test_acc,
                 'test_loss': test_loss
             }
@@ -191,12 +192,13 @@ def print_training_conclusion(history, model, device):
     
     print(f"\nModel Architecture:")
     print(f"└── Total Parameters: {history['total_params']:,}")
+    print(summary(model, input_size=(3, 32, 32)) )
     
     best_info = history['best_model_info']
     
     print(f"\nBest Model achieved at Epoch {best_info['epoch']}:")
-    print(f"├── Training Accuracy: {best_info['train_acc']:.2f}%")
-    print(f"├── Training Loss: {best_info['train_loss']:.4f}")
+   # print(f"├── Training Accuracy: {best_info['train_acc']:.2f}%")
+   # print(f"├── Training Loss: {best_info['train_loss']:.4f}")
     print(f"├── Test Accuracy: {best_info['test_acc']:.2f}%")
     print(f"└── Test Loss: {best_info['test_loss']:.4f}")
     
@@ -269,7 +271,7 @@ def main(model_name, is_train_augmentation):
     train_loader, test_loader = get_cifar_loaders(batch_size=128, is_train_augmentation=is_train_augmentation)
     
     # Optimizer and Scheduler setup for multiple epochs
-    num_epochs = 15
+    num_epochs = 1
     learning_rate = 0.01
     #optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     optimizer = optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=1e-4)
