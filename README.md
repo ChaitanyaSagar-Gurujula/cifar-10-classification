@@ -1,14 +1,13 @@
 
-# MNIST Model Fine-Tuned Project
+# CIFAR10 Classification Project
 
-A lightweight MNIST classifier with test accuracy above 99.4% accuracy.
+A CIFAR 10 classifier with test accuracy above 85% accuracy.
 
 ## Project Overview
 
-This project implements a lightweight CNN model for MNIST digit classification with the following constraints and features:
+This project implements a CNN model for CIFAR10 classification with the following constraints and features:
 
-- Model Parameters: < 8
-- Training Accuracy: > 99.4%
+- Model Parameters: < 200K
 - Test Accuracy: > 99.4%
 - Model Performance Tracking
 - Code Quality Checks
@@ -42,8 +41,8 @@ project_root/
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/yourusername/mnist-fine-tuned.git
-cd mnist-model-mlops
+git clone https://github.com/yourusername/cifar-10-classification.git
+cd cifar-10-classification
 ```
 
 2. Create and activate a virtual environment (optional but recommended):
@@ -69,14 +68,14 @@ To train the model, run the following command:
 ```bash
 # From project root directory
 export PYTHONPATH=$PYTHONPATH:$(pwd)
-python src/train.py  --model super_light --is_train_aug True
+python src/train.py  --model light --is_train_aug True
 ```
 or
 ```bash
-python -m src.train --model super_light --is_train_aug True
+python -m src.train --model light --is_train_aug True
 ```
 This will:
-- Download MNIST dataset (if not present)
+- Download CIFAR10 dataset (if not present)
 - Train the model for specified epochs
 - Save the best model as 'best_model.pth'
 - Display training progress and results
@@ -101,7 +100,7 @@ git init
 git add .
 git commit -m "Initial commit"
 git branch -M main
-git remote add origin https://github.com/yourusername/mnist-fine-tuned-pro.git
+git remote add origin https://github.com/yourusername/cifar-10-classification.git
 git push -u origin main
 ```
 
@@ -123,142 +122,100 @@ Note: Currently Github Actions won't be triggered while pushing changes to Githu
 
 ## Model Architecture
 
-- Used 2 Convolutional blocks with Batch Normalization and Dropout for regularization.
-- Used Adaptive Global Average Pooling followed by Convolution layer to map to output classes.
+``` bash 
+Model Architecture:
+└── Total Parameters: 184,982
+----------------------------------------------------------------
+        Layer (type)               Output Shape         Param #
+================================================================
+            Conv2d-1            [-1, 8, 32, 32]             224
+       BatchNorm2d-2            [-1, 8, 32, 32]              16
+           Dropout-3            [-1, 8, 32, 32]               0
+            Conv2d-4           [-1, 16, 32, 32]           1,168
+       BatchNorm2d-5           [-1, 16, 32, 32]              32
+           Dropout-6           [-1, 16, 32, 32]               0
+            Conv2d-7           [-1, 16, 32, 32]             160
+       BatchNorm2d-8           [-1, 16, 32, 32]              32
+           Dropout-9           [-1, 16, 32, 32]               0
+           Conv1d-10             [-1, 32, 1024]             544
+      BatchNorm1d-11             [-1, 32, 1024]              64
+           Conv2d-12           [-1, 32, 30, 30]           9,248
+      BatchNorm2d-13           [-1, 32, 30, 30]              64
+          Dropout-14           [-1, 32, 30, 30]               0
+           Conv1d-15               [-1, 8, 900]             264
+      BatchNorm1d-16               [-1, 8, 900]              16
+           Conv2d-17           [-1, 12, 30, 30]             876
+      BatchNorm2d-18           [-1, 12, 30, 30]              24
+          Dropout-19           [-1, 12, 30, 30]               0
+           Conv2d-20           [-1, 16, 30, 30]           1,744
+      BatchNorm2d-21           [-1, 16, 30, 30]              32
+          Dropout-22           [-1, 16, 30, 30]               0
+           Conv2d-23           [-1, 16, 30, 30]             160
+      BatchNorm2d-24           [-1, 16, 30, 30]              32
+          Dropout-25           [-1, 16, 30, 30]               0
+           Conv1d-26              [-1, 32, 900]             544
+      BatchNorm1d-27              [-1, 32, 900]              64
+           Conv2d-28           [-1, 64, 28, 28]          18,496
+      BatchNorm2d-29           [-1, 64, 28, 28]             128
+          Dropout-30           [-1, 64, 28, 28]               0
+           Conv1d-31              [-1, 16, 784]           1,040
+      BatchNorm1d-32              [-1, 16, 784]              32
+           Conv2d-33           [-1, 32, 28, 28]           4,640
+      BatchNorm2d-34           [-1, 32, 28, 28]              64
+          Dropout-35           [-1, 32, 28, 28]               0
+           Conv2d-36           [-1, 64, 14, 14]          18,496
+      BatchNorm2d-37           [-1, 64, 14, 14]             128
+          Dropout-38           [-1, 64, 14, 14]               0
+           Conv2d-39           [-1, 64, 14, 14]             640
+      BatchNorm2d-40           [-1, 64, 14, 14]             128
+          Dropout-41           [-1, 64, 14, 14]               0
+           Conv1d-42              [-1, 64, 196]           4,160
+      BatchNorm1d-43              [-1, 64, 196]             128
+           Conv2d-44           [-1, 64, 12, 12]          36,928
+      BatchNorm2d-45           [-1, 64, 12, 12]             128
+          Dropout-46           [-1, 64, 12, 12]               0
+           Linear-47                  [-1, 144]          83,088
+           Linear-48                   [-1, 10]           1,450
+================================================================
+Total params: 184,982
+Trainable params: 184,982
+Non-trainable params: 0
+----------------------------------------------------------------
+```
+
+**Highlights**:
+- Used 3 Convolutional blocks with Batch Normalization and Dropout for regularization.
+- Used Adaptive Global Average Pooling followed by FC layer to map to output classes.
 - Used OneCycleLR Scheduler for learning rate optimization.
 - Used Adam Optimizer with weight decay for better convergence.
-- Used Random Affine, Perspective Augmentations for better model generalization.
+- Used Albumentation augmentation library for better model generalization.
+
 
 ## Training Configuration
 
 - **Optimizer:** AdamW
 - **Learning Rate:** OneCycleLR (max_lr=0.01)
 - **Batch Size:** 128
-- **Epochs:** Configurable (default=20)
-
-## Models
-
-### LightMNIST:
-
-#### Target:
-
- - Basic Setup with working Model of final receptive field value 28
- - Get understanding of the performance of the model with simple structure.
-
-#### Results:
-Parameters: 4738
-
-##### Without Training Data Augmentation:
-
- - Best Train Accuracy: 99.80
- - Best Test Accuracy: 99.09 (15th Epoch)
-
-##### With Training Data Augmentation:
-
- - Best Train Accuracy: 99.11
- - Best Test Accuracy: 99.27 (15th Epoch)
-
-#### Analysis: 
-- Initial model works fine. But target is not achieved with or without data augmentation.
-- Model trained without data augmentation is causing overfitting.
-- Model training with data augmentation seems fine, but it doesnt hit our test acurracy target of 99.4 within 15 epochs.
-- Lets add batch normalization and dropout regularization to see if it can avoid overfitting and also for faster convergence.
+- **Epochs:** Configurable (default=200)
 
 #### Logs:
-- [View Training Logs without Data Augmentation](./training-logs/Light%20Model%20Training%20Logs%20without%20Augmentation.log)
-- [View Training Logs with Data Augmentation](./training-logs/Light%20Model%20Training%20Logs%20with%20Augmentation.log)
----
-### LightestMNIST:
+[View Training Logs](./cuda_training_logs.log)
+``` bash 
+==================================================
+TRAINING COMPLETED - FINAL RESULTS
+==================================================
 
-#### Target:
+Model Architecture:
+└── Total Parameters: 184,982
 
-- Model of final receptive field value 28
-- Efficiently using batch normalization and dropout for performance improvements.
+Best Model achieved at Epoch 182:
+├── Test Accuracy: 86.38%
+└── Test Loss: 0.4861
 
-#### Results:
-Parameters: 4274
+Model saved as: 'best_model.pth'
+==================================================
+```
 
-##### Without Training Data Augmentation:
-
- - Best Train Accuracy: 99.69
- - Best Test Accuracy: 99.30 (15th Epoch)
-
-##### With Training Data Augmentation:
-
- - Best Train Accuracy: 99.18
- - Best Test Accuracy: 99.42 (14th Epoch)
-
-#### Analysis: 
-- Reached Closer to the target accuracy. 
-- Overfitting got reduced in Model trained without data augmentation.
-- Model training with data augmentation has hit our target accuracy for the last two epochs.
-- Lets add GAP in the last layers to see if it can help in improving the performance further.
-
-#### Logs:
-- [View Training Logs without Data Augmentation](./training-logs/Lightest%20Model%20Training%20Logs%20without%20Augmentation.log)
-- [View Training Logs with Data Augmentation](./training-logs/Lightest%20Model%20Training%20Logs%20with%20Augmentation.log)
----
-### SuperLightMNIST:
-
-#### Target:
-
-- Model of final receptive field value 28
-- Trying GAP to see if it can help in performance improvement.
-For this, removed the transition layer(Max pooling and 1D conv) for the second convolution block  and replace it with GAP instead.
-This can cause slight increase in params but it should be fine as the total params are less than threshold (8k params).
-
-#### Results:
-Parameters: 4842
-
-##### Without Training Data Augmentation:
-
- - Best Train Accuracy: 99.72
- - Best Test Accuracy: 99.42 (15th Epoch)
-
-##### With Training Data Augmentation:
-
- - Best Train Accuracy: 99.26
- - Best Test Accuracy: 99.48 (13th Epoch)
-
-#### Analysis: 
-- Achieved Target Accuracy!
-- After adding GAP, model trained without data augmentation has hit the target accuracy but only once.
-- Model training with data augmentation has hit our target accuracy consistently for the last 5 epochs.
-- Used AdaptiveGAP and it has helped in improving model accuracy consistently.
-
-#### Logs:
-
-- [View Training Logs without Data Augmentation](./training-logs/SuperLight%20Model%20Training%20Logs%20without%20Augmentation.log)
-- [View Training Logs with Data Augmentation](./training-logs/SuperLight%20Model%20Training%20Logs%20with%20Augmentation.log)
-- [View CUDA Training Logs without Data Augmentation](./training-logs/CUDA%20SuperLight%20Model%20Training%20Logs%20without%20Augmentation.log)
-- [View CUDA Training Logs with Data Augmentation](./training-logs/SuperLight%20Model%20Training%20Logs%20with%20Augmentation.log)
-
-#### Cloud Training Screenshots
-
-##### Without Data Augmentation:
-![Cloud Training without Aug Pre](./cloud-training-screenshots/Cloud%20Training%20Without%20Data%20Augmentation_prefinal.png)
-![Cloud Training without Aug](./cloud-training-screenshots/Cloud%20Training%20Without%20Data%20Augmentation_final.png)
-
-
-##### With Data Augmentation:
-![Final model Cloud Training pre](./cloud-training-screenshots/Cloud%20Training%20With%20Data%20Augmentation_prefinal.png)
-![Final model Cloud Training](./cloud-training-screenshots/Cloud%20Training%20With%20Data%20Augmentation_final.png)
-
-#### PyTorch Model Files obtained from CUDA Training
-
-##### Without Data Augmentation:
- [SuperLightMNIST No Data Aug Model](./best_model_cuda_no_data_aug.pth)
-
-
-##### With Data Augmentation:
- [SuperLightMNIST With Data Aug Model](./best_model_cuda.pth)
-
-#### PyTorch Model Files obtained from CPU Training
- [SuperLightMNIST With Data Aug Model In CPU](./best_model.pth)
-
-Note: Only Final best model is saved in CPU.
-
----
 
 ## License
 
